@@ -1,0 +1,13 @@
+a,7.077573574089064,car/hour
+p_service,0.7168141592920354,probability
+p_reject,0.25663716814159293,probability
+p_busy_ko1,0.224954333283238,probability
+p_busy_ko2,0.675700674593428,probability
+n_columns_avg,1.576355682470094,cars
+p_idle_ko1,0.1982405885057642,probability
+p_idle_ko2,0.22540372902414174,probability
+r_avg,0.6290888528941371,cars
+t_wait_avg,0.08888481996107055,hour
+t_service_avg,0.2227254391591376,hour
+t_system_avg,0.3116102591202081,hour
+n_avg,2.205444535364231,cars
