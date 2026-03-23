@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace GasStation
 {
-    public static class GasStationSimulation
+    public class GasStationSimulation
     {
         private const int Lambda = 9;
 
@@ -15,22 +15,28 @@ namespace GasStation
 
         private const int Mu2 = 3;
 
-        private const int Seed = 2;
+        private int _seed;
 
-        private const int SampleOfCars = 200;
+        private int _sampleOfCars;
 
-        private static List<double> CmlAvr = new List<double>();
+        private Random rng;
 
-        private static Random rng;
+        private double StartWindow;
 
-        private static double StartWindow;
+        private double EndWindow;
 
-        private static double EndWindow;
+        private List<double> CmlAvr = new List<double>();
 
         //Список с временами приезда машин
-        public static List<Car> Cars { get; set; } = new List<Car>();
+        public List<Car> Cars { get; set; } = new List<Car>();
 
-        public static bool RunSimulation(out Exception exception, out List<Car> cars)
+        public GasStationSimulation(int seed, int sampleOfCars)
+        {
+            _seed = seed;
+            _sampleOfCars = sampleOfCars;
+        }
+
+        public bool RunSimulation(out Exception exception, out List<Car> cars)
         {
             exception = null;
             cars = null;
@@ -44,10 +50,11 @@ namespace GasStation
                 int doubleNCrytical = 2 * CalculateNCrytical();
 
                 StartWindow = 1;
+                Console.WriteLine(doubleNCrytical);
                 EndWindow = StartWindow + Cars[doubleNCrytical - 1].ArrivalTime;
 
-                double probabilityServed = Cars.Count(i => i.StationNumber != -1) / Cars.Count;
-                double probabilityDenial = Cars.Count(i => i.StationNumber == -1) / Cars.Count;
+                double probabilityServed = (double)Cars.Count(i => i.StationNumber != -1) / Cars.Count;
+                double probabilityDenial = (double)Cars.Count(i => i.StationNumber == -1) / Cars.Count;
 
                 double gasStationCapacity = GasStationCapacity();
                 (double probabilityBusy1, double probabilityBusy2) = ProbabilityBusyStation();
@@ -60,8 +67,8 @@ namespace GasStation
 
                 cars = Cars;
 
-                SaveAsCsv(gasStationCapacity, probabilityServed, probabilityDenial, 
-                    probabilityBusy1, probabilityBusy2, 
+                SaveAsCsv(gasStationCapacity, probabilityServed, probabilityDenial,
+                    probabilityBusy1, probabilityBusy2,
                     nColumnsAvarage, probabilityIdle1, probabilityIdle2, avarageTimeInStations);
 
                 return true;
@@ -70,21 +77,20 @@ namespace GasStation
             {
                 exception = ex;
                 return false;
-            } 
+            }
         }
 
-        private static void SaveAsCsv(double gasStationCapacity, double probabilityServed, double probabilityDenied, 
-            double probabilityBusySt1, double probabilityBusySt2, double nColumnsAvarage, double probabilityIdleStation1, 
+        private void SaveAsCsv(double gasStationCapacity, double probabilityServed, double probabilityDenied,
+            double probabilityBusySt1, double probabilityBusySt2, double nColumnsAvarage, double probabilityIdleStation1,
             double probabilityIdleStation2, double avarageTimeInStation)
         {
             string executablePath = Assembly.GetExecutingAssembly().Location;
-            string projectDirectory = Path.GetDirectoryName(executablePath);
+            string executableDirectory = Path.GetDirectoryName(executablePath);
 
-            string projectRoot = Directory.GetParent(projectDirectory).Parent.Parent.FullName;
+            // Формируем полный путь к файлу в папке с EXE
+            string filePath = Path.Combine(executableDirectory, "results.csv");
 
-            string filePath = "results.csv";
-
-            var results = new[]
+            var results = new List<SimulationResult>
             {
                 new SimulationResult { Parameter = "a", Value = gasStationCapacity, Unit = "car/hour" },
                 new SimulationResult { Parameter = "p_service", Value = probabilityServed, Unit = "probability" },
@@ -104,11 +110,6 @@ namespace GasStation
             using var writer = new StreamWriter(filePath);
             using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
 
-            csv.WriteField("Параметер");
-            csv.WriteField("Значение");
-            csv.WriteField("Единица измерения");
-            csv.NextRecord();
-
             foreach (var result in results)
             {
                 csv.WriteField(result.Parameter);
@@ -116,19 +117,21 @@ namespace GasStation
                 csv.WriteField(result.Unit);
                 csv.NextRecord();
             }
+
+            Console.WriteLine($"CSV файл успешно сохранен: {filePath}");
         }
 
-        private static void InitRng()
+        private void InitRng()
         {
-            rng = new Random(Seed);
+            rng = new Random(_seed);
         }
 
-        private static void GenerateCars()
+        private void GenerateCars()
         {
             double counterTaus = 0;
             List<double> taus = new List<double>();
 
-            for (int i = 0; i < SampleOfCars; i++)
+            for (int i = 0; i < _sampleOfCars; i++)
             {
                 double tau = -1 * Math.Log(rng.NextDouble()) / Lambda;
                 counterTaus += tau;
@@ -142,9 +145,9 @@ namespace GasStation
             }
         }
 
-        private static void ModelServiceProcess()
+        private void ModelServiceProcess()
         {
-            foreach (Car car in Cars) 
+            foreach (Car car in Cars)
             {
                 //Попытка отправить на первую бензаколонку
                 if ((Cars.LastOrDefault(c => c.StationNumber == 1)?.LeavingTime ?? -1) <= car.ArrivalTime)
@@ -164,9 +167,9 @@ namespace GasStation
             }
         }
 
-        private static int CalculateNCrytical()
+        private int CalculateNCrytical()
         {
-            for (int i = CmlAvr.Count - 1; i < 0; i--) 
+            for (int i = CmlAvr.Count - 1; i > 0; i--)
             {
                 double value = CmlAvr[i];
 
@@ -177,18 +180,18 @@ namespace GasStation
             throw new Exception("Failed to calculate N crytical!");
         }
 
-        private static double GasStationCapacity() => Cars.Count(c => c.StationNumber != -1 
+        private double GasStationCapacity() => Cars.Count(c => c.StationNumber != -1
         && c.LeavingTime > StartWindow && c.ArrivalTime < EndWindow) / (EndWindow - StartWindow);
 
-        private static double AvarageTimeInStations(double avarage, double gasStationCapacity) => gasStationCapacity > 0 
+        private double AvarageTimeInStations(double avarage, double gasStationCapacity) => gasStationCapacity > 0
             ? avarage / gasStationCapacity : 0;
 
-        private static (double, double) ProbabilityBusyStation()
+        private (double, double) ProbabilityBusyStation()
         {
-            List<(double time, int stationsDelta)> events = new List<(double time, int stationsDelta)> ();
+            List<(double time, int stationsDelta)> events = new List<(double time, int stationsDelta)>();
 
-            foreach (var car in Cars.Where(c => c.StationNumber != -1 && 
-            c.LeavingTime > StartWindow && c.ArrivalTime < EndWindow)) 
+            foreach (var car in Cars.Where(c => c.StationNumber != -1 &&
+            c.LeavingTime > StartWindow && c.ArrivalTime < EndWindow))
             {
                 double normalizedStart = Math.Max(StartWindow, car.ArrivalTime);
                 double normalizedEnd = Math.Min(EndWindow, car.LeavingTime);
@@ -197,18 +200,21 @@ namespace GasStation
                 events.Add((normalizedEnd, -1));
             }
 
-            events.OrderBy(e => e.time);
+            events = events.OrderBy(e => e.time).ToList();
 
             int busyStations = 0;
             double lastEventTime = StartWindow;
 
-            Dictionary<int, double> busyStationsTime = new Dictionary<int, double>() 
+            Dictionary<int, double> busyStationsTime = new Dictionary<int, double>()
             {
+                {0, 0d},
                 {1, 0d},
                 {2, 0d},
             };
 
-            foreach (var @event in events) 
+            Console.WriteLine(Cars.Count(c => c.StationNumber == 1));
+
+            foreach (var @event in events)
             {
                 double delta = @event.time - lastEventTime;
 
@@ -225,19 +231,19 @@ namespace GasStation
             return (busyStationsTime[1] / totalTime, busyStationsTime[2] / totalTime);
         }
 
-        private static (double, double) ProbabilityIdleStations()
+        private (double, double) ProbabilityIdleStations()
         {
             double totalTime = EndWindow - StartWindow;
 
-            double busyStationOne = Cars.Where(c => c.StationNumber == 1 
-            && c.LeavingTime > StartWindow && c.ArrivalTime < EndWindow).Select(c => Math.Min(c.LeavingTime, EndWindow) - 
+            double busyStationOne = Cars.Where(c => c.StationNumber == 1
+            && c.LeavingTime > StartWindow && c.ArrivalTime < EndWindow).Select(c => Math.Min(c.LeavingTime, EndWindow) -
             Math.Max(c.ArrivalTime, StartWindow)).Sum();
 
             double busyStationTwo = Cars.Where(c => c.StationNumber == 2
             && c.LeavingTime > StartWindow && c.ArrivalTime < EndWindow).Select(c => Math.Min(c.LeavingTime, EndWindow) -
             Math.Max(c.ArrivalTime, StartWindow)).Sum();
 
-            return (1 - busyStationOne / totalTime, 1 - busyStationTwo / totalTime);
+            return (1d - busyStationOne / totalTime, 1d - busyStationTwo / totalTime);
         }
     }
 }
