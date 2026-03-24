@@ -9,80 +9,63 @@ namespace ConsoleApp1
 {
     public static class GasStationSimulation
     {
-        private const int Lambda = 9;
+        public const int Lambda = 9;
 
-        private const int Mu1 = 6;
+        public const int Mu1 = 6;
 
-        private const int Mu2 = 3;
+        public const int Mu2 = 3;
 
-        private const int Seed = 2;
+        public const int Seed = 8;
 
-        private const int SampleOfCars = 300;
+        public const int SampleOfCars = 300;
 
-        private static List<double> CmlAvr = new List<double>();
+        public static List<double> CmlAvr = new List<double>();
 
-        private static Random rng;
+        public static Random rng;
 
-        private static double StartWindow;
+        public static double StartWindow;
 
-        private static double EndWindow;
+        public static double EndWindow;
 
         //Список с временами приезда машин
         public static List<Car> Cars { get; set; } = new List<Car>();
 
-        public static bool RunSimulation(out Exception exception, out List<Car> cars)
+        public static void RunSimulation(out List<Car> cars, out int doubleNCrytical)
         {
-            exception = null;
-            cars = null;
+            InitRng();
+            GenerateCars();
+            ModelServiceProcess();
 
-            try
-            {
-                InitRng();
-                GenerateCars();
-                ModelServiceProcess();
+            doubleNCrytical = 2 * CalculateNCrytical();
 
-                int doubleNCrytical = 2 * CalculateNCrytical();
+            StartWindow = 1;
+            EndWindow = StartWindow + Cars[doubleNCrytical - 1].ArrivalTime;
 
-                StartWindow = 1;
-                Console.WriteLine(doubleNCrytical);
-                EndWindow = StartWindow + Cars[doubleNCrytical - 1].ArrivalTime;
+            double probabilityServed = (double)Cars.Count(i => i.StationNumber != -1) / Cars.Count;
+            double probabilityDenial = (double)Cars.Count(i => i.StationNumber == -1) / Cars.Count;
 
-                double probabilityServed = (double) Cars.Count(i => i.StationNumber != -1) / Cars.Count;
-                double probabilityDenial = (double) Cars.Count(i => i.StationNumber == -1) / Cars.Count;
+            double gasStationCapacity = GasStationCapacity();
+            (double probabilityBusy1, double probabilityBusy2) = ProbabilityBusyStation();
 
-                double gasStationCapacity = GasStationCapacity();
-                (double probabilityBusy1, double probabilityBusy2) = ProbabilityBusyStation();
+            double nColumnsAvarage = probabilityBusy1 + 2 * probabilityBusy2;
 
-                double nColumnsAvarage = probabilityBusy1 + 2 * probabilityBusy2;
+            (double probabilityIdle1, double probabilityIdle2) = ProbabilityIdleStations();
 
-                (double probabilityIdle1, double probabilityIdle2) = ProbabilityIdleStations();
+            double avarageTimeInStations = AvarageTimeInStations(nColumnsAvarage, gasStationCapacity);
 
-                double avarageTimeInStations = AvarageTimeInStations(nColumnsAvarage, gasStationCapacity);
+            cars = Cars;
 
-                cars = Cars;
-
-                SaveAsCsv(gasStationCapacity, probabilityServed, probabilityDenial,
-                    probabilityBusy1, probabilityBusy2,
-                    nColumnsAvarage, probabilityIdle1, probabilityIdle2, avarageTimeInStations);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-                return false;
-            }
+            SaveAsCsv(gasStationCapacity, probabilityServed, probabilityDenial,
+                probabilityBusy1, probabilityBusy2,
+                nColumnsAvarage, probabilityIdle1, probabilityIdle2, avarageTimeInStations);
         }
 
         private static void SaveAsCsv(double gasStationCapacity, double probabilityServed, double probabilityDenied,
             double probabilityBusySt1, double probabilityBusySt2, double nColumnsAvarage, double probabilityIdleStation1,
             double probabilityIdleStation2, double avarageTimeInStation)
         {
-            string executablePath = Assembly.GetExecutingAssembly().Location;
-            string executableDirectory = Path.GetDirectoryName(executablePath);
 
-            // Формируем полный путь к файлу в папке с EXE
-            string filePath = Path.Combine(executableDirectory, "results.csv");
+            string filePath = "../../../../../results.csv";
 
             var results = new[]
             {
@@ -117,7 +100,7 @@ namespace ConsoleApp1
 
         private static void InitRng()
         {
-            rng = new Random();
+            rng = new Random(Seed);
         }
 
         private static void GenerateCars()
@@ -196,8 +179,6 @@ namespace ConsoleApp1
 
             events = events.OrderBy(e => e.time).ToList();
 
-            Console.WriteLine($"{string.Join('\n', events.Select(e => e.time))}");
-
             int busyStations = 0;
             double lastEventTime = StartWindow;
 
@@ -208,13 +189,10 @@ namespace ConsoleApp1
                 {2, 0d},
             };
 
-            Console.WriteLine(Cars.Count(c => c.StationNumber == 1));
-
             foreach (var @event in events)
             {
                 double delta = @event.time - lastEventTime;
 
-                //if (busyStations != 0)
                 busyStationsTime[busyStations] += delta;
 
                 busyStations += @event.stationsDelta;
@@ -223,9 +201,6 @@ namespace ConsoleApp1
             }
 
             double totalTime = EndWindow - StartWindow;
-
-            Console.WriteLine($"Время 0 - {busyStationsTime[0]},Время 1: {busyStationsTime[1]}, Время 2: {busyStationsTime[2]}");
-            Console.WriteLine($"Сумма времен: {busyStationsTime.Sum(s => s.Value)} (Должно быть равно окну: {totalTime})");
 
             return (busyStationsTime[1] / totalTime, busyStationsTime[2] / totalTime);
         }

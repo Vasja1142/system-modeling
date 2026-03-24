@@ -1,6 +1,6 @@
 ﻿using ConsoleApp1;
 
-GasStationSimulation.RunSimulation(out var exception, out var cars);
+GasStationSimulation.RunSimulation(out var cars, out int doubleNCrit);
 
-if (exception != null)
-    Console.WriteLine(exception);
+FigureDrawer.GenerateNCritPlot(GasStationSimulation.CmlAvr, doubleNCrit / 2);
+FigureDrawer.GenerateCarsPlot(doubleNCrit, cars);
