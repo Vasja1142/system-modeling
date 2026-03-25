@@ -1,0 +1,23 @@
+# Visual Studio
+.vs/
+x64/
+Debug/
+Release/
+*.exe
+*.pdb
+*.ilk
+*.log
+*.obj
+*.idb
+*.tlog/
+*.db
+*.ipch
+*.suo
+*.user
+
+# Temporary files
+*.tmp
+*.temp
+
+# Results (если не хотите сохранять в git)
+# results.csv
