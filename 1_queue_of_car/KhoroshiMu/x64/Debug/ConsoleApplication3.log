@@ -1,3 +1,0 @@
-﻿  ConsoleApplication3.cpp
-C:\Users\user\source\repos\ConsoleApplication3\ConsoleApplication3.cpp(316,15): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
-  ConsoleApplication3.vcxproj -> C:\Users\user\source\repos\ConsoleApplication3\x64\Debug\KhoroshiMu.exe
