@@ -1,0 +1,10 @@
+[project]
+name = "system-modeling"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.14"
+dependencies = [
+    "ipykernel>=7.2.0",
+    "matplotlib>=3.10.8",
+    "requests>=2.33.0",
+]
