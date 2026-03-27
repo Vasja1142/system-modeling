@@ -236,10 +236,10 @@ void computeValues() {
     cout << "Вероятность занятости двух колонок = " << time_K2_and_K1_are_not_free() / time << endl;
     cout << "Среднее число занятых колонок = "
         << veronebusy + 2 * time_K2_and_K1_are_not_free() / time << endl;
-    cout << "Вероятность простоя КО1 = " << 1 - countTimeko1 / time << endl;
-    cout << "Вероятность простоя КО2 = " << 1 - countTimeko2 / time << endl;
+    cout << "Вероятность простоя КО1 = " << (time - countTimeko1) / time << endl;
+    cout << "Вероятность простоя КО2 = " << (time - countTimeko2) / time << endl;
     cout << "Среднее количество заявок в очереди = " << totalQueueTime / time << endl;
-    cout << "Среднее время ожидания в очереди = " << totalQueueTime / queuecount << endl;
+    cout << "Среднее время ожидания в очереди = " << totalQueueTime / serviced << endl;
     cout << "Среднее время обслуживания = " << (countTimeko1 + countTimeko2) / serviced << endl;
     cout << "Среднее время заявки в системе = "
         << (countTimeko1 + countTimeko2 + totalQueueTime) / serviced << endl;
