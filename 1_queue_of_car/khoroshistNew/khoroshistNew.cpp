@@ -217,7 +217,7 @@ void computeValues() {
         }
     }
 
-    double veronebusy = (countTimeko1 + countTimeko2 - time_K2_and_K1_are_not_free()) / time;
+    double veronebusy = (countTimeko1 + countTimeko2 - 2 * time_K2_and_K1_are_not_free()) / time;
 
     cout << "========== ОСНОВНЫЕ ПОКАЗАТЕЛИ ==========" << endl;
     cout << "Обслужено: " << serviced << endl;
