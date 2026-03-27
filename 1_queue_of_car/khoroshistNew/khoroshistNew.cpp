@@ -264,7 +264,7 @@ void computeValues() {
     file << "p_idle_ko1," << 1 - countTimeko1 / time << ",probability\n";
     file << "p_idle_ko2," << 1 - countTimeko2 / time << ",probability\n";
     file << "r_avg," << totalQueueTime / time << ",cars\n";
-    file << "t_wait_avg," << totalQueueTime / queuecount << ",hour\n";
+    file << "t_wait_avg," << totalQueueTime / serviced << ",hour\n";
     file << "t_service_avg," << (countTimeko1 + countTimeko2) / serviced << ",hour\n";
     file << "t_system_avg," << (countTimeko1 + countTimeko2 + totalQueueTime) / serviced << ",hour\n";
     file << "n_avg," << (countTimeko1 + countTimeko2 + totalQueueTime) / time << ",cars\n";
